@@ -39,7 +39,7 @@ async function loadDataAndRender() {
     try {
         const summary = await currentWorksheet.getSummaryDataAsync({
             maxRows: 1000,
-            ignoreSelection: false
+            ignoreSelection: false // Mantiene esta opción para respetar selecciones/filtros de la hoja
         });
         
         const cols = summary.columns;
@@ -81,15 +81,35 @@ async function loadDataAndRender() {
 
         // Renderizado
         renderAnimatedBars(topData, finalDimName, finalMeasureName, currentWorksheet); 
+        
+        // 🎯 Configurar el listener de filtro después de la carga inicial
+        setupFilterListener();
 
     } catch (err) {
         let errorMsg = err.message || "Error desconocido al solicitar datos.";
         console.error("❌ ERROR CRÍTICO FINAL (API de Tableau):", err);
-        // Si hay error, limpiamos el gráfico
         document.getElementById("chart").innerHTML = 
             `<p style="color:red; text-align:center;">🔴 Error: ${errorMsg}.</p>`;
     }
 }
+
+// 🎯 NUEVA FUNCIÓN: Se suscribe a los cambios de filtro
+function setupFilterListener() {
+    // Solo suscribimos una vez
+    if (currentWorksheet.hasListener(tableau.TableauEventType.FilterChanged)) {
+        return;
+    }
+    
+    currentWorksheet.addEventListener(
+        tableau.TableauEventType.FilterChanged, 
+        (filterEvent) => {
+            console.log(`🔄 Evento de filtro en ${filterEvent.fieldName} detectado. Recargando gráfico...`);
+            // Llama a la función principal de carga para obtener los datos filtrados y redibujar
+            loadDataAndRender();
+        }
+    );
+}
+
 
 // Aplica el filtro de Tableau al dashboard
 function applyTableauFilter(sourceWorksheet, fieldName, value) {
@@ -97,15 +117,12 @@ function applyTableauFilter(sourceWorksheet, fieldName, value) {
         fieldName, 
         [value],   
         tableau.FilterUpdateType.Replace 
-    ).then((event) => {
+    ).then(() => {
         console.log(`✅ Filtro aplicado a ${fieldName} con valor ${value}.`);
-        // 🎯 Guarda el valor que está filtrando actualmente
         currentFilterValue = value; 
         
         // Efecto visual: Resalta la barra seleccionada
         d3.selectAll(".bar").style("opacity", 0.4); 
-        // d3.select(event.currentTarget) no funciona en esta función asíncrona,
-        // así que buscamos la barra cuyo dato coincide con el valor filtrado.
         d3.selectAll(".bar").filter(d => d.category === value).style("opacity", 1.0);
 
 
@@ -114,13 +131,12 @@ function applyTableauFilter(sourceWorksheet, fieldName, value) {
     });
 }
 
-// 🎯 NUEVA FUNCIÓN: Limpia el filtro
+// Limpia el filtro
 function clearTableauFilter(sourceWorksheet, fieldName) {
     sourceWorksheet.clearFilterAsync(
         fieldName
     ).then(() => {
         console.log(`✅ Filtro limpiado para el campo ${fieldName}.`);
-        // 🎯 Limpia el estado global
         currentFilterValue = null;
         
         // Efecto visual: Restaura la opacidad de todas las barras
@@ -186,12 +202,10 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
         .on("click", function(event, d) {
             const categoryValue = d.category;
             
-            // 🎯 LÓGICA DE ALTERNANCIA (TOGGLE)
+            // Lógica de alternancia (TOGGLE)
             if (currentFilterValue === categoryValue) {
-                // Limpiar el filtro si se hace clic en el valor ya filtrado
                 clearTableauFilter(worksheetToFilter, dimLabel);
             } else {
-                // Aplicar el nuevo filtro
                 applyTableauFilter(worksheetToFilter, dimLabel, categoryValue);
             }
         });
