@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Extensión Tableau: Gráfico Interactivo D3/Anime</title>
+
+    <script src="https://extensions.tableauusercontent.com/resources/tableau.extensions.1.latest.js"></script>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <style>
+        body {
+            background:#000;
+            color:#fff;
+            font-family: sans-serif;
+            padding: 16px;
+        }
+        #chart {
+            /* Contenedor del gráfico D3 */
+            width: 100%;
+            height: 400px; 
+            margin-top: 20px;
+        }
+        .axis path, .axis line {
+            /* Estilos para ejes D3 */
+            stroke: #6b7280;
+            stroke-width: 1px;
+        }
+        .axis text {
+            fill: #e5e7eb;
+        }
+        .interactive-bar {
+            /* Estilo para indicar que la barra es clickeable */
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .interactive-bar:hover {
+            opacity: 0.8 !important; /* Ligeramente más opaco al pasar el mouse */
+        }
+    </style>
+</head>
+<body>
+
+    <h2>📊 Gráfico de Responsables y Conteo</h2>
+
+    <p>Haz clic en una barra para filtrar el dashboard completo:</p>
+    
+    <div id="chart"></div> 
+
+    <script src="script.js"></script>
+
+</body>
+</html>
