@@ -2,13 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Título Animado con Anime.js</title>
+    <title>Título Animado Corregido</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
     <style>
-        /* 2. ESTILOS CSS - NEÓN Y FUENTE */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+        /* ESTILOS CSS - NEÓN LEGIBLE */
 
         body {
             background-color: #0b0f16;
@@ -17,12 +16,13 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden; /* Evita barras de desplazamiento */
+            overflow: hidden;
         }
 
         .dashboard-title {
-            /* Fuente y estilo base */
-            font-family: 'Orbitron', sans-serif;
+            /* Fuente Segura y Técnica (Cambiado de Orbitron a Monospace) */
+            /* Monospace es una fuente de sistema, legible y con aire 'técnico' */
+            font-family: 'Consolas', 'Courier New', monospace; 
             font-size: 3.5em; 
             text-transform: uppercase;
             letter-spacing: 5px;
@@ -32,18 +32,18 @@
             box-shadow: 0 0 10px #00cccc;
             background: rgba(0, 255, 255, 0.05); 
             
-            /* Ocultamos las letras inicialmente */
+            /* **CORRECCIÓN CLAVE** - Asegura que no haya volteos o espejos */
+            transform: none !important; 
+            
             opacity: 0; 
             display: inline-block;
         }
 
-        /* 3. ESTILOS PARA LAS LETRAS DIVIDIDAS (SPLITTEXT) */
-        /* anime.js envuelve cada letra en un span con la clase 'letter' */
+        /* ESTILOS PARA LAS LETRAS DIVIDIDAS */
         .dashboard-title .letter {
-            /* Color de neón y efecto de brillo inicial (luego la animación lo modifica) */
             color: #00ffff; 
             display: inline-block;
-            line-height: 1em; /* Asegura que la animación de la Y no afecte la línea */
+            line-height: 1em;
             text-shadow: 
                 0 0 5px #00ffff,
                 0 0 15px #00ffff,
@@ -57,47 +57,36 @@
     <h1 class="dashboard-title">Dashboard Comercial</h1>
 
     <script>
-        // Seleccionamos el elemento del título
         var titleEl = document.querySelector('.dashboard-title');
-        
-        // Función de utilidad de anime.js para dividir el texto
-        // Divide el contenido del h1 en spans individuales (uno por letra)
         titleEl.innerHTML = titleEl.textContent.replace(/\S/g, "<span class='letter'>$&</span>");
 
-        // Animación de Entrada 'Matrix' o 'Settings'
+        // Animación de Entrada
         anime.timeline({loop: false})
             .add({
-                // Animación para hacer aparecer todo el texto (el h1)
                 targets: '.dashboard-title',
-                opacity: [0, 1], // Fade-in del contenedor
+                opacity: [0, 1],
                 duration: 500,
                 easing: "easeInOutQuad"
             })
             .add({
-                // Animación de las letras individuales (la clase '.letter')
                 targets: '.dashboard-title .letter',
-                translateY: ["1.1em", 0], // Baja desde arriba
-                translateX: ["0.2em", 0], // Mueve ligeramente a la izquierda
-                opacity: [0, 1], // Aparece
-                rotateZ: [90, 0], // Rota 90 grados
-                
-                // Configuración de la secuencia
-                duration: 1200, // Duración de la animación de cada letra
-                easing: "easeOutExpo", // Curva de aceleración
-                delay: (el, i) => 50 * i // Retraso de 50ms entre cada letra para el efecto "máquina de escribir/glitch"
-            }, '-=1000'); // Comienza esta animación 1000ms antes de que termine la anterior (superposición)
+                translateY: ["1.1em", 0],
+                opacity: [0, 1],
+                rotateZ: [90, 0], 
+                duration: 1200,
+                easing: "easeOutExpo",
+                delay: (el, i) => 50 * i
+            }, '-=1000');
             
-            
-        // Efecto de Pulso de Neón (Loop Infinito)
+        // Efecto de Pulso de Neón
         anime({
             targets: '.dashboard-title .letter',
-            // Anima la escala de la letra y el desenfoque de la sombra de texto
             scale: [1, 1.05], 
             easing: "easeInOutSine",
             duration: 1500,
-            direction: "alternate", // Alterna la animación (pulso)
+            direction: "alternate",
             loop: true,
-            delay: (el, i) => 50 * i // Pulso secuencial
+            delay: (el, i) => 50 * i
         });
         
     </script>
