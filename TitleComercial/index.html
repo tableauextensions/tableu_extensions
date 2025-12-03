@@ -61,34 +61,35 @@
         titleEl.innerHTML = titleEl.textContent.replace(/\S/g, "<span class='letter'>$&</span>");
 
         // Animación de Entrada
-        anime.timeline({loop: false})
-            .add({
-                targets: '.dashboard-title',
-                opacity: [0, 1],
-                duration: 500,
-                easing: "easeInOutQuad"
-            })
-            .add({
-                targets: '.dashboard-title .letter',
-                translateY: ["1.1em", 0],
-                opacity: [0, 1],
-                rotateZ: [90, 0], 
-                duration: 1200,
-                easing: "easeOutExpo",
-                delay: (el, i) => 50 * i
-            }, '-=1000');
-            
-        // Efecto de Pulso de Neón
-        anime({
+        // Animación de Entrada
+        anime.timeline({ loop: false })
+          .add({
+            targets: '.dashboard-title',
+            opacity: [0, 1],
+            duration: 500,
+            easing: "easeInOutQuad"
+          })
+          .add({
             targets: '.dashboard-title .letter',
-            scale: [1, 1.05], 
-            easing: "easeInOutSine",
-            duration: 1500,
-            direction: "alternate",
-            loop: true,
-            delay: (el, i) => 50 * i
+            translateY: [30, 0],     // baja → posición normal
+            opacity: [0, 1],
+            scale: [0.8, 1],         // leve zoom-in
+            duration: 900,
+            easing: "easeOutExpo",
+            delay: (el, i) => 40 * i
+          }, '-=400');
+
+                // Efecto de Pulso de Neón
+        anime({
+          targets: '.dashboard-title .letter',
+          scale: [1, 1.05],
+          easing: "easeInOutSine",
+          duration: 1500,
+          direction: "alternate",
+          loop: true,
+          delay: (el, i) => 50 * i
         });
-        
+
     </script>
 </body>
 </html>
