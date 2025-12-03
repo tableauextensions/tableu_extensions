@@ -1,12 +1,14 @@
-// script.js - VERSIÓN FINAL CON DETECCIÓN AUTOMÁTICA, ALTERNANCIA Y ESCUCHA DE FILTROS
+// script.js - VERSIÓN FINAL CON DETECCIÓN AUTOMÁTICA, ALTERNANCIA Y ESCUCHA SOLO EN LA HOJA
 
 let dashboard = null;
 let currentWorksheet = null;
 const WORKSHEET_NAME = "Responsable"; 
 let finalDimName = "";   
 let finalMeasureName = ""; 
-// 🎯 VARIABLE GLOBAL para rastrear el valor filtrado actualmente
 let currentFilterValue = null; 
+
+// Para no enganchar el listener más de una vez
+let filterListenerAttached = false;
 
 // Inicialización de la extensión
 document.addEventListener("DOMContentLoaded", () => {
@@ -22,8 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
             currentWorksheet = targetWorksheet;
             console.log(`➡️ Hoja "${WORKSHEET_NAME}" encontrada. Cargando datos...`);
 
-            // 🔥 NUEVO: escuchar filtros de todo el dashboard
-            setupFilterListeners();
+            // 👇 AHORA: solo escuchamos filtros de ESTA hoja
+            setupFilterListenerOnCurrent();
 
             loadDataAndRender(); 
         } else {
@@ -36,31 +38,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+function setupFilterListenerOnCurrent() {
+    if (!currentWorksheet) return;
+    if (filterListenerAttached) return; // evitar duplicados
 
-// 🔥 NUEVO: escucha cambios de filtro en TODAS las hojas del dashboard
-function setupFilterListeners() {
-    try {
-        if (!dashboard || !dashboard.worksheets) {
-            console.warn("⚠️ Dashboard aún no está listo para configurar listeners.");
-            return;
+    currentWorksheet.addEventListener(
+        tableau.TableauEventType.FilterChanged,
+        () => {
+            console.log("🔄 Filtro cambiado en 'Responsable'. Recargando datos...");
+            loadDataAndRender();
         }
+    );
 
-        dashboard.worksheets.forEach(ws => {
-            ws.addEventListener(
-                tableau.TableauEventType.FilterChanged,
-                () => {
-                    console.log(`🔄 Filtro cambiado en hoja "${ws.name}". Recargando datos...`);
-                    loadDataAndRender();
-                }
-            );
-        });
-
-        console.log("✅ Listeners de filtros configurados en todas las hojas.");
-    } catch (e) {
-        console.error("❌ Error al configurar listeners de filtros:", e);
-    }
+    filterListenerAttached = true;
+    console.log("✅ Listener de filtros configurado SOLO en la hoja 'Responsable'.");
 }
-
 
 // Carga datos y renderiza
 async function loadDataAndRender() {
@@ -69,15 +61,16 @@ async function loadDataAndRender() {
     try {
         const summary = await currentWorksheet.getSummaryDataAsync({
             maxRows: 1000,
-            ignoreSelection: false   // 👈 respeta los filtros del dashboard
+            ignoreSelection: false
         });
         
         const cols = summary.columns;
         const dataTable = summary.data;
         
-        // Detección automática: buscamos el primer string (dimensión) y el primer número (medida)
         let dimCol = cols.find(c => c.dataType === "string");
-        let measureCol = cols.find(c => c.dataType === "int" || c.dataType === "float" || c.dataType === "number");
+        let measureCol = cols.find(c =>
+            c.dataType === "int" || c.dataType === "float" || c.dataType === "number"
+        );
 
         if (!dimCol || !measureCol) {
             console.error("No se encontraron una Dimensión (Cadena) y una Medida (Número) adecuadas.");
@@ -93,7 +86,6 @@ async function loadDataAndRender() {
 
         console.log(`✅ Campos detectados: Dimensión="${finalDimName}", Medida="${finalMeasureName}"`);
 
-        // Procesamiento de datos (D3)
         let rows = dataTable.map(row => ({
             category: row[dimIndex].formattedValue,
             value: Number(row[measureIndex].value)
@@ -107,29 +99,21 @@ async function loadDataAndRender() {
         
         grouped.sort((a, b) => b.value - a.value);
 
-        // 🔥 Si quieres TODOS, usa directamente `grouped`
-        // o limita a, por ejemplo, 200 para no matar el navegador si hay miles
         const MAX_BARS = 200;
         const displayData = grouped.slice(0, MAX_BARS);
 
-        // Renderizado
         renderAnimatedBars(displayData, finalDimName, finalMeasureName, currentWorksheet); 
-
-
-        // 🔥 Ajustar visual según filtro actual (por si viene de afuera)
         await syncVisualWithCurrentFilter();
 
     } catch (err) {
         let errorMsg = err.message || "Error desconocido al solicitar datos.";
         console.error("❌ ERROR CRÍTICO FINAL (API de Tableau):", err);
-        // Si hay error, limpiamos el gráfico
         document.getElementById("chart").innerHTML = 
             `<p style="color:red; text-align:center;">🔴 Error: ${errorMsg}.</p>`;
     }
 }
 
-
-// 🔥 NUEVO: sincroniza opacidades con el filtro actual de Tableau
+// Sincronizar opacidad de barras con el filtro aplicado
 async function syncVisualWithCurrentFilter() {
     try {
         const filters = await currentWorksheet.getFiltersAsync();
@@ -150,7 +134,6 @@ async function syncVisualWithCurrentFilter() {
     }
 }
 
-
 // Aplica el filtro de Tableau al dashboard
 function applyTableauFilter(sourceWorksheet, fieldName, value) {
     sourceWorksheet.applyFilterAsync(
@@ -169,7 +152,6 @@ function applyTableauFilter(sourceWorksheet, fieldName, value) {
     });
 }
 
-
 // Limpia el filtro
 function clearTableauFilter(sourceWorksheet, fieldName) {
     sourceWorksheet.clearFilterAsync(
@@ -184,17 +166,14 @@ function clearTableauFilter(sourceWorksheet, fieldName) {
     });
 }
 
-
-// Renderiza el gráfico de barras animado
+// Renderizado del gráfico
 function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
     const container = document.getElementById("chart");
     container.innerHTML = ""; 
 
     const width = container.clientWidth || 600;
-
-    // 🔥 Altura dinámica según cantidad de barras
-    const barHeight = 24;                        // alto por barra
-    const minInnerHeight = 200;                  // mínimo para pocos datos
+    const barHeight = 24;
+    const minInnerHeight = 200;
     const innerHeight = Math.max(minInnerHeight, barHeight * data.length);
 
     const margin = { top: 20, right: 40, bottom: 40, left: 160 };
@@ -203,15 +182,13 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
     const svg = d3.select(container)
         .append("svg")
         .attr("width", width)
-        .attr("height", height)
-        .style("background", "transparent");
+        .attr("height", height);
 
     const innerWidth = width - margin.left - margin.right;
 
     const g = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // --- 1. Escalas (D3) ---
     const x = d3.scaleLinear()
         .domain([0, d3.max(data, d => d.value) * 1.05 || 1])
         .range([0, innerWidth]);
@@ -221,7 +198,6 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
         .range([0, innerHeight])
         .padding(0.2);
 
-    // --- 2. Ejes (D3) ---
     g.append("g")
         .attr("class", "axis axis-y")
         .call(d3.axisLeft(y).tickSizeOuter(0));
@@ -231,7 +207,6 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x).ticks(5));
 
-    // --- 3. Barras (D3) y Click para Alternar Filtro ---
     const bars = g.selectAll(".bar")
         .data(data, d => d.category)
         .enter()
@@ -240,11 +215,10 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
         .attr("x", 0)
         .attr("y", d => y(d.category))
         .attr("height", y.bandwidth())
-        .attr("width", 0) 
-        .style("fill", "#38bdf8") 
+        .attr("width", 0)
+        .style("fill", "#00c4ff")
         .on("click", function(event, d) {
             const categoryValue = d.category;
-            
             if (currentFilterValue === categoryValue) {
                 clearTableauFilter(worksheetToFilter, dimLabel);
             } else {
@@ -252,7 +226,6 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
             }
         });
 
-    // --- 4. Animación de Barras (Anime.js) ---
     anime({
         targets: bars.nodes(), 
         width: el => {
@@ -264,7 +237,6 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
         duration: 1200
     });
 
-    // --- 5. Etiquetas (D3 y Anime.js) ---
     const labels = g.selectAll(".bar-label")
         .data(data, d => d.category)
         .enter()
@@ -289,4 +261,3 @@ function renderAnimatedBars(data, dimLabel, measureLabel, worksheetToFilter) {
         duration: 800
     });
 }
-
