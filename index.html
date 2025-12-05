@@ -2,65 +2,135 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <title>Extensión Tableau: Gráfico Interactivo D3/Anime</title>
+    <title>Dashboard Comercial 3D</title>
 
+    <!-- Tableau Extensions API -->
     <script src="https://extensions.tableauusercontent.com/resources/tableau.extensions.1.latest.js"></script>
+
+    <!-- D3 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
     <style>
-        /* FONDO AZULADO TIPO DASHBOARD */
-        :root,
-        html,
-        body {
-            background: #16324d;           /* 🔵 azul oscuro */
+        html, body {
             margin: 0;
             padding: 0;
-            color: #e5e7eb;
-            font-family: sans-serif;
-        }
-
-        /* Contenedor del gráfico */
-        #chart {
-            background: #0b2640;          /* mismo azul para que se vea sólido */
             width: 100%;
-            height: 400px;
-            overflow-y: auto;
-            overflow-x: hidden;
+            height: 100%;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #0f172a 0, #020617 60%, #000 100%);
+            color: #e5e7eb;
+            overflow: hidden;
         }
 
-        /* SVG del gráfico */
+        #app {
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #title-container {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #f97316;
+            text-shadow: 0 0 12px rgba(249,115,22,0.5);
+            min-height: 32px;
+        }
+
+        /* Contenedor general de la tarjeta 3D */
+        #card-shell {
+            flex: 1;
+            position: relative;
+            perspective: 1200px;
+        }
+
+        /* Tarjeta que rota */
+        #chart-card {
+            position: absolute;
+            inset: 0;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(8,47,73,0.95));
+            box-shadow:
+              0 18px 40px rgba(0,0,0,0.6),
+              0 0 40px rgba(56,189,248,0.25);
+            transform-style: preserve-3d;
+            cursor: grab;
+        }
+
+        .card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            padding: 12px 16px 16px 16px;
+            box-sizing: border-box;
+        }
+
+        .card-front {
+            transform: rotateY(0deg);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .chart-face {
+            width: 100%;
+            height: 100%;
+        }
+
         svg {
-            background: #0b2640;
-        }
-
-        /* Ejes D3 */
-        .axis path,
-        .axis line {
-            stroke: #4b5563;              /* gris suave */
+            font-family: inherit;
         }
 
         .axis text {
-            fill: #e5e7eb;               /* texto clarito */
+            fill: #9ca3af;
             font-size: 10px;
         }
 
-        /* Barras interactivas */
-        .interactive-bar {
-            cursor: pointer;
-            fill: #00c4ff;               /* celeste tipo neón */
+        .axis path,
+        .axis line {
+            stroke: #1f2933;
         }
 
-        .interactive-bar:hover {
-            opacity: 0.85;
+        .bar {
+            cursor: pointer;
+        }
+
+        .bar:hover {
+            opacity: 0.9;
+            filter: drop-shadow(0 0 6px rgba(56,189,248,0.9));
         }
     </style>
 </head>
 <body>
-    
-    <div id="chart"></div>
+    <div id="app">
+        <div id="title-container">Dashboard Comercial</div>
+
+        <div id="card-shell">
+            <div id="chart-card">
+                <!-- Cara frontal: Hoja "Responsable" -->
+                <div class="card-face card-front">
+                    <div id="chart-responsable" class="chart-face"></div>
+                </div>
+                <!-- Cara trasera: Hoja "Area" -->
+                <div class="card-face card-back">
+                    <div id="chart-area" class="chart-face"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
-
 </body>
 </html>
